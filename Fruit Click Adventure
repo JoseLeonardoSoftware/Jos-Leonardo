@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fruit Click Adventure</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Quicksand:wght@400;600;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Quicksand', sans-serif;
+            background: linear-gradient(135deg, #4CAF50 0%, #388E3C 50%, #2E7D32 100%);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        .game-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .score-display {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: white;
+            text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.3);
+            font-family: 'Press Start 2P', monospace;
+        }
+        
+        .fruit-display {
+            width: 220px;
+            height: 220px;
+            margin: 40px auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+            border: 4px solid #FFD700;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .fruit-display:hover {
+            transform: scale(1.05);
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.4);
+        }
+        
+        .fruit-display:active {
+            transform: scale(0.95);
+        }
+        
+        .fruit-icon {
+            font-size: 6rem;
+            transition: all 0.3s ease;
+        }
+        
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 30px;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 15px 30px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: 'Quicksand', sans-serif;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(45deg, #FF6B6B, #EE5A24);
+            color: white;
+            box-shadow: 0 5px 15px rgba(238, 90, 36, 0.4);
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(238, 90, 36, 0.6);
+        }
+        
+        .btn-secondary {
+            background: linear-gradient(45deg, #4ECDC4, #44A08D);
+            color: white;
+            box-shadow: 0 5px 15px rgba(78, 205, 196, 0.4);
+        }
+        
+        .btn-secondary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(78, 205, 196, 0.6);
+        }
+        
+        .stats {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 15px;
+            margin-top: 30px;
+            color: white;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+        
+        .stat-item {
+            background: rgba(255, 255, 255, 0.15);
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        
+        .congratulations {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            background: linear-gradient(135deg, #FFD700, #FFA500);
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            color: #333;
+            z-index: 1000;
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5);
+            transition: all 0.5s ease;
+        }
+        
+        .congratulations.show {
+            transform: translate(-50%, -50%) scale(1);
+        }
+        
+        .golden-item {
+            animation: goldenGlow 2s ease-in-out infinite;
+        }
+        
+        .cosmic-item {
+            animation: cosmicGlow 1.5s ease-in-out infinite;
+        }
+        
+        @keyframes goldenGlow {
+            0%, 100% { transform: scale(1); filter: drop-shadow(0 0 10px gold); }
+            50% { transform: scale(1.1); filter: drop-shadow(0 0 20px gold); }
+        }
+        
+        @keyframes cosmicGlow {
+            0%, 100% { 
+                transform: scale(1); 
+                filter: drop-shadow(0 0 15px #8A2BE2) drop-shadow(0 0 30px #4B0082);
+            }
+            50% { 
+                transform: scale(1.2); 
+                filter: drop-shadow(0 0 25px #8A2BE2) drop-shadow(0 0 50px #4B0082);
+            }
+        }
+        
+        .particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+        }
+        
+        .auto-click-indicator {
+            position: absolute;
+            bottom: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(76, 175, 80, 0.9);
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            display: none;
+        }
+        
+        .auto-click-indicator.active {
+            display: block;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        
+        .fruit-distribution {
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            text-align: center;
+        }
+        
+        .distribution-bar {
+            height: 20px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            margin: 10px 0;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .distribution-fill {
+            height: 100%;
+            border-radius: 10px;
+            transition: width 0.3s ease;
+        }
+        
+        .cosmic-section {
+            margin-top: 30px;
+            padding: 20px;
+            background: linear-gradient(135deg, #8A2BE2, #4B0082);
+            border-radius: 15px;
+            color: white;
+            text-align: center;
+        }
+        
+        .cosmic-item-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .cosmic-item-stat {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        
+        @media (max-width: 768px) {
+            .fruit-display {
+                width: 180px;
+                height: 180px;
+            }
+            
+            .fruit-icon {
+                font-size: 5rem;
+            }
+            
+            .score-display {
+                font-size: 2rem;
+            }
+            
+            .btn {
+                padding: 12px 20px;
+                font-size: 1rem;
+            }
+            
+            .stats-grid {
+                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            }
+            
+            .cosmic-item-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="particles" id="particles"></div>
+    
+    <div class="game-container">
+        <div class="header">
+            <h1 class="text-4xl font-bold text-white mb-4" style="font-family: 'Press Start 2P', monospace;">🍓 FRUIT CLICK ADVENTURE 🍌</h1>
+            <div class="score-display" id="score">Pontuação: 0</div>
+        </div>
+        
+        <div class="fruit-display" id="fruit-display">
+            <div class="fruit-icon" id="fruit-icon">🍌</div>
+            <div class="auto-click-indicator" id="auto-click-indicator">AUTO</div>
+        </div>
+        
+        <div class="controls">
+            <button class="btn btn-primary" id="click-btn">CLICAR AGORA!</button>
+            <button class="btn btn-secondary" id="auto-click-btn">Ligar Auto Click</button>
+            <button class="btn btn-secondary" id="reset-btn">Reiniciar</button>
+        </div>
+        
+        <div class="fruit-distribution">
+            <h3 class="text-white text-lg font-bold mb-3">📊 Distribuição das Frutas (a cada 10 frutas)</h3>
+            <div class="distribution-bar">
+                <div class="distribution-fill" style="width: 50%; background: #FFD700;" title="Banana - 50%"></div>
+            </div>
+            <div class="distribution-bar">
+                <div class="distribution-fill" style="width: 20%; background: #FF6B6B;" title="Morango - 20%"></div>
+            </div>
+            <div class="distribution-bar">
+                <div class="distribution-fill" style="width: 20%; background: #8B4513;" title="Coco - 20%"></div>
+            </div>
+            <div class="distribution-bar">
+                <div class="distribution-fill" style="width: 10%; background: #FF4757;" title="Melancia - 10%"></div>
+            </div>
+        </div>
+        
+        <div class="stats">
+            <h2 class="text-2xl font-bold text-white mb-4 text-center">📊 Estatísticas</h2>
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <h3>🍌 Bananas</h3>
+                    <p id="banana-count">0</p>
+                    <p>1 ponto cada</p>
+                </div>
+                <div class="stat-item">
+                    <h3>🍓 Morangos</h3>
+                    <p id="strawberry-count">0</p>
+                    <p>2 pontos cada</p>
+                </div>
+                <div class="stat-item">
+                    <h3>🥥 Cocos</h3>
+                    <p id="coco-count">0</p>
+                    <p>3 pontos cada</p>
+                </div>
+                <div class="stat-item">
+                    <h3>🍉 Melancias</h3>
+                    <p id="melon-count">0</p>
+                    <p>5 pontos cada</p>
+                </div>
+                <div class="stat-item">
+                    <h3>🍎 Maçãs</h3>
+                    <p id="apple-count">0</p>
+                    <p>4 pontos cada</p>
+                </div>
+                <div class="stat-item">
+                    <h3>🍇 Uvas</h3>
+                    <p id="grape-count">0</p>
+                    <p>3 pontos cada</p>
+                </div>
+                <div class="stat-item">
+                    <h3>🍍 Abacaxis</h3>
+                    <p id="pineapple-count">0</p>
+                    <p>6 pontos cada</p>
+                </div>
+            </div>
+            
+            <div class="mt-6 text-center">
+                <h3 class="text-xl font-bold mb-2">🏆 Itens Dourados Encontrados</h3>
+                <div class="text-sm opacity-80">
+                    <p>🍌 Banana Dourada: 10% chance - <span id="gold-banana">0</span></p>
+                    <p>🍓 Morango Dourado: 5% chance - <span id="gold-strawberry">0</span></p>
+                    <p>🥥 Coco Dourado: 2.3% chance - <span id="gold-coco">0</span></p>
+                    <p>🍉 Melancia Dourada: 0.5% chance - <span id="gold-melon">0</span></p>
+                    <p>🍎 Maçã Dourada: 3% chance - <span id="gold-apple">0</span></p>
+                    <p>🍇 Uva Dourada: 4% chance - <span id="gold-grape">0</span></p>
+                    <p>🍍 Abacaxi Dourado: 1% chance - <span id="gold-pineapple">0</span></p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="cosmic-section">
+            <h2 class="text-3xl font-bold mb-4">🌌 FRUTAS CÓSMICAS</h2>
+            <p class="text-lg mb-4">Itens extremamente raros com pontuações astronômicas!</p>
+            
+            <div class="cosmic-item-grid">
+                <div class="cosmic-item-stat">
+                    <h3>🍌🌌 Banana Cósmica</h3>
+                    <p id="cosmic-banana">0</p>
+                    <p>0.3% chance - 2300 pontos</p>
+                </div>
+                <div class="cosmic-item-stat">
+                    <h3>🍓🌌 Morango Cósmico</h3>
+                    <p id="cosmic-strawberry">0</p>
+                    <p>0.24% chance - 5000 pontos</p>
+                </div>
+                <div class="cosmic-item-stat">
+                    <h3>🍍🌌 Abacaxi Cósmico</h3>
+                    <p id="cosmic-pineapple">0</p>
+                    <p>0.12% chance - 12000 pontos</p>
+                </div>
+                <div class="cosmic-item-stat">
+                    <h3>🍉🌌 Melancia Cósmica</h3>
+                    <p id="cosmic-melon">0</p>
+                    <p>0.01% chance - 24000 pontos</p>
+                </div>
+                <div class="cosmic-item-stat">
+                    <h3>🥗🌌 Salada Cósmica</h3>
+                    <p id="cosmic-salad">0</p>
+                    <p>0.001% chance - 100.000.000 pontos</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="congratulations" id="congratulations">
+        <h2 class="text-3xl font-bold mb-4" id="congrats-title">PARABÉNS!</h2>
+        <div class="text-6xl mb-4" id="congrats-icon">🎉</div>
+        <p class="text-xl mb-4" id="congrats-message">Você encontrou um item especial!</p>
+        <button class="btn btn-primary" onclick="hideCongratulations()">Continuar</button>
+    </div>
+
+    <script>
+        let score = 0;
+        let currentFruit = 'banana';
+        let autoClickActive = false;
+        let autoClickTimer = null;
+        
+        // Contadores de frutas
+        const fruitCounts = {
+            banana: 0,
+            strawberry: 0,
+            coco: 0,
+            melon: 0,
+            apple: 0,
+            grape: 0,
+            pineapple: 0,
+            gold_banana: 0,
+            gold_strawberry: 0,
+            gold_coco: 0,
+            gold_melon: 0,
+            gold_apple: 0,
+            gold_grape: 0,
+            gold_pineapple: 0,
+            cosmic_banana: 0,
+            cosmic_strawberry: 0,
+            cosmic_pineapple: 0,
+            cosmic_melon: 0,
+            cosmic_salad: 0
+        };
+        
+        const fruitIcons = {
+            banana: '🍌',
+            strawberry: '🍓',
+            coco: '🥥',
+            melon: '🍉',
+            apple: '🍎',
+            grape: '🍇',
+            pineapple: '🍍',
+            gold_banana: '🍌⭐',
+            gold_strawberry: '🍓⭐',
+            gold_coco: '🥥⭐',
+            gold_melon: '🍉⭐',
+            gold_apple: '🍎⭐',
+            gold_grape: '🍇⭐',
+            gold_pineapple: '🍍⭐',
+            cosmic_banana: '🍌🌌',
+            cosmic_strawberry: '🍓🌌',
+            cosmic_pineapple: '🍍🌌',
+            cosmic_melon: '🍉🌌',
+            cosmic_salad: '🥗🌌'
+        };
+        
+        const fruitPoints = {
+            banana: 1,
+            strawberry: 2,
+            coco: 3,
+            melon: 5,
+            apple: 4,
+            grape: 3,
+            pineapple: 6,
+            gold_banana: 10,
+            gold_strawberry: 15,
+            gold_coco: 25,
+            gold_melon: 50,
+            gold_apple: 20,
+            gold_grape: 18,
+            gold_pineapple: 35,
+            cosmic_banana: 2300,
+            cosmic_strawberry: 5000,
+            cosmic_pineapple: 12000,
+            cosmic_melon: 24000,
+            cosmic_salad: 100000000
+        };
+        
+        const congratulationsMessages = {
+            gold_banana: "Você encontrou uma Banana Dourada! +10 pontos!",
+            gold_strawberry: "INCRÍVEL! Morango Dourado encontrado! +15 pontos!",
+            gold_coco: "ESPETACULAR! Coco Dourado raríssimo! +25 pontos!",
+            gold_melon: "LENDÁRIO!!! Melancia Dourada MÍTICA! +50 pontos!",
+            gold_apple: "EXCELENTE! Maçã Dourada encontrada! +20 pontos!",
+            gold_grape: "MARAVILHOSO! Uva Dourada especial! +18 pontos!",
+            gold_pineapple: "FANTÁSTICO! Abacaxi Dourado raro! +35 pontos!",
+            cosmic_banana: "COSMICO! Banana Cósmica encontrada! +2300 pontos!",
+            cosmic_strawberry: "ESTELAR! Morango Cósmico descoberto! +5000 pontos!",
+            cosmic_pineapple: "GALÁCTICO! Abacaxi Cósmico avistado! +12000 pontos!",
+            cosmic_melon: "INTERGALÁCTICO! Melancia Cósmica raríssima! +24000 pontos!",
+            cosmic_salad: "UNIVERSAL!!! SALADA CÓSMICA LENDÁRIA! +100.000.000 pontos!"
+        };
+        
+        function updateScore() {
+            document.getElementById('score').textContent = `Pontuação: ${score.toLocaleString('pt-BR')}`;
+            document.getElementById('banana-count').textContent = fruitCounts.banana;
+            document.getElementById('strawberry-count').textContent = fruitCounts.strawberry;
+            document.getElementById('coco-count').textContent = fruitCounts.coco;
+            document.getElementById('melon-count').textContent = fruitCounts.melon;
+            document.getElementById('apple-count').textContent = fruitCounts.apple;
+            document.getElementById('grape-count').textContent = fruitCounts.grape;
+            document.getElementById('pineapple-count').textContent = fruitCounts.pineapple;
+            document.getElementById('gold-banana').textContent = fruitCounts.gold_banana;
+            document.getElementById('gold-strawberry').textContent = fruitCounts.gold_strawberry;
+            document.getElementById('gold-coco').textContent = fruitCounts.gold_coco;
+            document.getElementById('gold-melon').textContent = fruitCounts.gold_melon;
+            document.getElementById('gold-apple').textContent = fruitCounts.gold_apple;
+            document.getElementById('gold-grape').textContent = fruitCounts.gold_grape;
+            document.getElementById('gold-pineapple').textContent = fruitCounts.gold_pineapple;
+            document.getElementById('cosmic-banana').textContent = fruitCounts.cosmic_banana;
+            document.getElementById('cosmic-strawberry').textContent = fruitCounts.cosmic_strawberry;
+            document.getElementById('cosmic-pineapple').textContent = fruitCounts.cosmic_pineapple;
+            document.getElementById('cosmic-melon').textContent = fruitCounts.cosmic_melon;
+            document.getElementById('cosmic-salad').textContent = fruitCounts.cosmic_salad;
+        }
+        
+        function getRandomFruit() {
+            const rand = Math.random();
+            
+            // Verificar se aparece item cósmico primeiro (mais raros primeiro)
+            if (rand < 0.00001) return 'cosmic_salad';      // 0.001% chance
+            if (rand < 0.00011) return 'cosmic_melon';      // 0.01% chance (0.011% - 0.001%)
+            if (rand < 0.0023) return 'cosmic_pineapple';   // 0.12% chance (0.23% - 0.11%)
+            if (rand < 0.0047) return 'cosmic_strawberry';  // 0.24% chance (0.47% - 0.23%)
+            if (rand < 0.0077) return 'cosmic_banana';      // 0.3% chance (0.77% - 0.47%)
+            
+            // Verificar se aparece item dourado
+            if (rand < 0.0177) return 'gold_melon';         // 0.5% chance (1.77% - 0.77%)
+            if (rand < 0.0407) return 'gold_coco';         // 2.3% chance (4.07% - 1.77%)
+            if (rand < 0.0707) return 'gold_strawberry';   // 3% chance (7.07% - 4.07%)
+            if (rand < 0.1107) return 'gold_grape';        // 4% chance (11.07% - 7.07%)
+            if (rand < 0.1407) return 'gold_apple';        // 3% chance (14.07% - 11.07%)
+            if (rand < 0.1507) return 'gold_pineapple';    // 1% chance (15.07% - 14.07%)
+            if (rand < 0.2507) return 'gold_banana';       // 10% chance (25.07% - 15.07%)
+            
+            // Frutas normais - distribuição específica: 50% banana, 20% morango, 20% coco, 10% melancia
+            const normalRand = Math.random();
+            
+            if (normalRand < 0.50) return 'banana';     // 50% chance
+            if (normalRand < 0.70) return 'strawberry'; // 20% chance (70% - 50%)
+            if (normalRand < 0.90) return 'coco';       // 20% chance (90% - 70%)
+            if (normalRand < 0.92) return 'apple';      // 2% chance (92% - 90%)
+            if (normalRand < 0.94) return 'grape';      // 2% chance (94% - 92%)
+            if (normalRand < 0.96) return 'pineapple';  // 2% chance (96% - 94%)
+            return 'melon';                             // 4% chance restante (100% - 96%)
+        }
+        
+        function clickFruit() {
+            const fruit = getRandomFruit();
+            currentFruit = fruit;
+            
+            const fruitIcon = document.getElementById('fruit-icon');
+            fruitIcon.textContent = fruitIcons[fruit];
+            fruitIcon.className = 'fruit-icon';
+            
+            // Adicionar classe de animação para itens especiais
+            if (fruit.includes('gold')) {
+                fruitIcon.classList.add('golden-item');
+            } else if (fruit.includes('cosmic')) {
+                fruitIcon.classList.add('cosmic-item');
+            }
+            
+            // Mostrar mensagem de parabéns para itens especiais
+            if (fruit.includes('gold') || fruit.includes('cosmic')) {
+                showCongratulations(fruit);
+            }
+            
+            // Adicionar pontos e incrementar contador
+            score += fruitPoints[fruit];
+            fruitCounts[fruit]++;
+            
+            updateScore();
+            createParticle();
+        }
+        
+        function showCongratulations(fruitType) {
+            const congrats = document.getElementById('congratulations');
+            const title = document.getElementById('congrats-title');
+            const icon = document.getElementById('congrats-icon');
+            const message = document.getElementById('congrats-message');
+            
+            icon.textContent = fruitIcons[fruitType];
+            message.textContent = congratulationsMessages[fruitType];
+            
+            // Mensagem especial baseada na raridade
+            if (fruitType === 'cosmic_salad') {
+                title.textContent = "UNIVERSAL!!!";
+                title.style.color = "#8A2BE2";
+                title.style.fontSize = "4rem";
+            } else if (fruitType === 'cosmic_melon') {
+                title.textContent = "INTERGALÁCTICO!";
+                title.style.color = "#4B0082";
+                title.style.fontSize = "3.5rem";
+            } else if (fruitType === 'cosmic_pineapple') {
+                title.textContent = "GALÁCTICO!";
+                title.style.color = "#9370DB";
+                title.style.fontSize = "3rem";
+            } else if (fruitType === 'cosmic_strawberry') {
+                title.textContent = "ESTELAR!";
+                title.style.color = "#DA70D6";
+                title.style.fontSize = "2.8rem";
+            } else if (fruitType === 'cosmic_banana') {
+                title.textContent = "CÓSMICO!";
+                title.style.color = "#7B68EE";
+                title.style.fontSize = "2.5rem";
+            } else if (fruitType === 'gold_melon') {
+                title.textContent = "LENDÁRIO!";
+                title.style.color = "#FFD700";
+            } else {
+                title.textContent = "PARABÉNS!";
+                title.style.color = "#4CAF50";
+            }
+            
+            congrats.classList.add('show');
+        }
+        
+        function hideCongratulations() {
+            document.getElementById('congratulations').classList.remove('show');
+        }
+        
+        function toggleAutoClick() {
+            if (autoClickActive) {
+                stopAutoClick();
+            } else {
+                startAutoClick();
+            }
+        }
+        
+        function startAutoClick() {
+            autoClickActive = true;
+            document.getElementById('auto-click-btn').textContent = 'Parar Auto Click';
+            document.getElementById('auto-click-indicator').classList.add('active');
+            
+            autoClickTimer = setInterval(() => {
+                clickFruit();
+            }, 1000); // 1 click por segundo
+        }
+        
+        function stopAutoClick() {
+            autoClickActive = false;
+            clearInterval(autoClickTimer);
+            document.getElementById('auto-click-btn').textContent = 'Ligar Auto Click';
+            document.getElementById('auto-click-indicator').classList.remove('active');
+        }
+        
+        function resetGame() {
+            score = 0;
+            currentFruit = 'banana';
+            
+            // Resetar todos os contadores
+            for (const fruit in fruitCounts) {
+                fruitCounts[fruit] = 0;
+            }
+            
+            document.getElementById('fruit-icon').textContent = fruitIcons.banana;
+            document.getElementById('fruit-icon').className = 'fruit-icon';
+            
+            stopAutoClick();
+            updateScore();
+            hideCongratulations();
+        }
+        
+        function createParticle() {
+            const particles = document.getElementById('particles');
+            const particle = document.createElement('div');
+            
+            const size = Math.random() * 20 + 10;
+            const colors = ['#FFD700', '#FF6B6B', '#4CAF50', '#2196F3', '#9C27B0', '#8A2BE2', '#4B0082'];
+            
+            particle.style.cssText = `
+                position: absolute;
+                width: ${size}px;
+                height: ${size}px;
+                background: ${colors[Math.floor(Math.random() * colors.length)]};
+                border-radius: 50%;
+                pointer-events: none;
+                animation: particleAnim 1s ease-out forwards;
+            `;
+            
+            // Posicionar próximo à fruta
+            const fruitRect = document.getElementById('fruit-display').getBoundingClientRect();
+            particle.style.left = (fruitRect.left + fruitRect.width / 2) + 'px';
+            particle.style.top = (fruitRect.top + fruitRect.height / 2) + 'px';
+            
+            // Animação aleatória
+            const angle = Math.random() * Math.PI * 2;
+            const distance = Math.random() * 100 + 50;
+            particle.style.setProperty('--end-x', Math.cos(angle) * distance + 'px');
+            particle.style.setProperty('--end-y', Math.sin(angle) * distance + 'px');
+            
+            particles.appendChild(particle);
+            
+            // Remover após animação
+            setTimeout(() => {
+                particle.remove();
+            }, 1000);
+        }
+        
+        // Adicionar CSS para animação de partículas
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes particleAnim {
+                0% {
+                    transform: translate(0, 0) scale(1);
+                    opacity: 1;
+                }
+                100% {
+                    transform: translate(var(--end-x), var(--end-y)) scale(0);
+                    opacity: 0;
+                }
+            }
+        `;
+        document.head.appendChild(style);
+        
+        // Event Listeners
+        document.getElementById('fruit-display').addEventListener('click', clickFruit);
+        document.getElementById('click-btn').addEventListener('click', clickFruit);
+        document.getElementById('auto-click-btn').addEventListener('click', toggleAutoClick);
+        document.getElementById('reset-btn').addEventListener('click', resetGame);
+        
+        // Inicializar
+        updateScore();
+        
+        // Tecla espaço para clicar
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') {
+                clickFruit();
+                e.preventDefault();
+            }
+        });
+    </script>
+</body>
+</html>
