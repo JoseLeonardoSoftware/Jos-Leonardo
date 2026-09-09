@@ -1,0 +1,12 @@
+# Code that reads your name and gives some data about it
+name = input('Whats is your name complete?:')
+upper = name.upper()
+lower = name.lower()
+split = name.split()
+join = ''.join(split)
+letters = (len(join))
+first_name = (len(split[0]))
+print('Your name in upper:', upper)
+print('Your name in lower:', lower)
+print(f'number of letters:{letters}')
+print(f'Number of letters in first name:{first_name}')

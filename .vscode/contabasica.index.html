@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerador de Respostas - WhatsApp</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <!-- Cabeçalho -->
+        <header>
+            <div class="logo">💬</div>
+            <h1>Gerador de Respostas para WhatsApp</h1>
+            <p class="subtitle">Crie respostas profissionais e persuasivas para seu negócio</p>
+        </header>
+
+        <!-- Formulário -->
+        <main>
+            <div class="form-group">
+                <label for="mensagem">📩 Mensagem do Cliente</label>
+                <textarea
+                    id="mensagem"
+                    placeholder="Ex: Oi, vocês estão abertos? Qual o cardápio de hoje?"
+                    rows="4"
+                ></textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="tipo_negocio">🏪 Tipo de Negócio</label>
+                <select id="tipo_negocio">
+                    <option value="lanchonete">🍔 Lanchonete</option>
+                    <option value="loja_roupas">👗 Loja de Roupas</option>
+                    <option value="barbearia">💈 Barbearia</option>
+                    <option value="generico">📋 Atendimento Genérico</option>
+                </select>
+            </div>
+
+            <button id="btn-gerar" onclick="gerarResposta()">
+                ✨ Gerar Resposta
+            </button>
+
+            <!-- Mensagem de erro -->
+            <div id="erro" class="erro" style="display: none;"></div>
+
+            <!-- Área de resposta -->
+            <div id="resposta-container" class="resposta-container" style="display: none;">
+                <div class="resposta-header">
+                    <h3>📱 Resposta Gerada</h3>
+                    <button class="btn-copiar" onclick="copiarResposta()">
+                        📋 Copiar
+                    </button>
+                </div>
+                <div id="resposta-texto" class="resposta-texto"></div>
+                <div id="copiado" class="copiado" style="display: none;">
+                    ✅ Copiado para a área de transferência!
+                </div>
+            </div>
+
+            <!-- Histórico -->
+            <div id="historico-container" class="historico-container" style="display: none;">
+                <h3>🕐 Histórico (últimas 5 respostas)</h3>
+                <div id="historico-lista"></div>
+            </div>
+        </main>
+
+        <!-- Rodapé -->
+        <footer>
+            <p>Feito com ❤️ para pequenos negócios</p>
+        </footer>
+    </div>
+
+    <script>
+        // Mapeamento de tipos para nomes legíveis
+        const tipoNomes = {
+            lanchonete: "🍔 Lanchonete",
+            loja_roupas: "👗 Loja de Roupas",
+            barbearia: "💈 Barbearia",
+            generico: "📋 Genérico",
+        };
+
+        /**
+         * Gera a resposta automática chamando o backend
+         */
+        async function gerarResposta() {
+            const mensagem = document.getElementById("mensagem").value.trim();
+            const tipoNegocio = document.getElementById("tipo_negocio").value;
+            const erroDiv = document.getElementById("erro");
+            const respostaContainer = document.getElementById("resposta-container");
+
+            // Limpar erro anterior
+            erroDiv.style.display = "none";
+
+            // Validação
+            if (!mensagem) {
+                erroDiv.textContent = "⚠️ Por favor, digite a mensagem do cliente antes de gerar a resposta.";
+                erroDiv.style.display = "block";
+                return;
+            }
+
+            // Desabilitar botão durante o processamento
+            const btn = document.getElementById("btn-gerar");
+            btn.disabled = true;
+            btn.textContent = "⏳ Gerando...";
+
+            try {
+                const response = await fetch("/generate", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        mensagem: mensagem,
+                        tipo_negocio: tipoNegocio,
+                    }),
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    // Mostrar resposta
+                    document.getElementById("resposta-texto").textContent = data.resposta;
+                    respostaContainer.style.display = "block";
+                    respostaContainer.classList.add("fade-in");
+
+                    // Atualizar histórico
+                    atualizarHistorico(data.historico);
+                } else {
+                    erroDiv.textContent = data.erro || "Erro ao gerar resposta.";
+                    erroDiv.style.display = "block";
+                }
+            } catch (error) {
+                erroDiv.textContent = "❌ Erro de conexão. Verifique se o servidor está rodando.";
+                erroDiv.style.display = "block";
+            } finally {
+                btn.disabled = false;
+                btn.textContent = "✨ Gerar Resposta";
+            }
+        }
+
+        /**
+         * Copia a resposta gerada para a área de transferência
+         */
+        async function copiarResposta() {
+            const texto = document.getElementById("resposta-texto").textContent;
+            try {
+                await navigator.clipboard.writeText(texto);
+                const copiado = document.getElementById("copiado");
+                copiado.style.display = "block";
+                setTimeout(() => {
+                    copiado.style.display = "none";
+                }, 2000);
+            } catch (err) {
+                // Fallback para navegadores mais antigos
+                const textarea = document.createElement("textarea");
+                textarea.value = texto;
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand("copy");
+                document.body.removeChild(textarea);
+                alert("Resposta copiada!");
+            }
+        }
+
+        /**
+         * Atualiza a seção de histórico na interface
+         */
+        function atualizarHistorico(historico) {
+            const container = document.getElementById("historico-container");
+            const lista = document.getElementById("historico-lista");
+
+            if (!historico || historico.length === 0) {
+                container.style.display = "none";
+                return;
+            }
+
+            container.style.display = "block";
+            lista.innerHTML = "";
+
+            historico.forEach((item, index) => {
+                const div = document.createElement("div");
+                div.className = "historico-item";
+                div.innerHTML = `
+                    <div class="historico-meta">
+                        <span class="historico-tipo">${tipoNomes[item.tipo] || item.tipo}</span>
+                        <span class="historico-msg">Cliente: "<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>i</mi><mi>t</mi><mi>e</mi><mi>m</mi><mi mathvariant="normal">.</mi><mi>m</mi><mi>e</mi><mi>n</mi><mi>s</mi><mi>a</mi><mi>g</mi><mi>e</mi><mi>m</mi><mi mathvariant="normal">.</mi><mi>s</mi><mi>u</mi><mi>b</mi><mi>s</mi><mi>t</mi><mi>r</mi><mi>i</mi><mi>n</mi><mi>g</mi><mo stretchy="false">(</mo><mn>0</mn><mo separator="true">,</mo><mn>50</mn><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">{item.mensagem.substring(0, 50)}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord"><span class="mord mathnormal">i</span><span class="mord mathnormal">t</span><span class="mord mathnormal">e</span><span class="mord mathnormal">m</span><span class="mord">.</span><span class="mord mathnormal">m</span><span class="mord mathnormal">e</span><span class="mord mathnormal">n</span><span class="mord mathnormal">s</span><span class="mord mathnormal">a</span><span class="mord mathnormal" style="margin-right:0.03588em;">g</span><span class="mord mathnormal">e</span><span class="mord mathnormal">m</span><span class="mord">.</span><span class="mord mathnormal">s</span><span class="mord mathnormal">u</span><span class="mord mathnormal">b</span><span class="mord mathnormal">s</span><span class="mord mathnormal">t</span><span class="mord mathnormal" style="margin-right:0.02778em;">r</span><span class="mord mathnormal">in</span><span class="mord mathnormal" style="margin-right:0.03588em;">g</span><span class="mopen">(</span><span class="mord">0</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">50</span><span class="mclose">)</span></span></span></span></span>{item.mensagem.length > 50 ? '...' : ''}"</span>
+                    </div>
+                    <div class="historico-resposta">${item.resposta}</div>
+                `;
+                lista.appendChild(div);
+            });
+        }
+
+        // Permitir enviar com Enter (Ctrl+Enter)
+        document.getElementById("mensagem").addEventListener("keydown", function (e) {
+            if (e.ctrlKey && e.key === "Enter") {
+                gerarResposta();
+            }
+        });
+    </script>
+</body>
+</html>

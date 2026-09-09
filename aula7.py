@@ -1,3 +1,4 @@
+#depois do print f usar dentro das {o.title} entre outros 
 from random import choice
 a1 = str(input('Nome do aluno 1:'))
 a2 = str(input('Nome dp aluno 2:'))

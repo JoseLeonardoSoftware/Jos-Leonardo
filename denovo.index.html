@@ -1,0 +1,94 @@
+// Solicita acesso ao microfone
+async function iniciarDetector() {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+    const audioContext = new AudioContext();
+    const source = audioContext.createMediaStreamSource(stream);
+
+    const analyser = audioContext.createAnalyser();
+    analyser.fftSize = 2048;
+
+    source.connect(analyser);
+
+    const buffer = new Float32Array(analyser.fftSize);
+
+    function atualizar() {
+        analyser.getFloatTimeDomainData(buffer);
+
+        const frequencia = detectarFrequencia(buffer, audioContext.sampleRate);
+
+        if (frequencia !== -1) {
+            const nota = frequenciaParaNota(frequencia);
+
+            console.clear();
+            console.log("Frequência:", frequencia.toFixed(2), "Hz");
+            console.log("Nota:", nota.nome);
+            console.log("Oitava:", nota.oitava);
+        }
+
+        requestAnimationFrame(atualizar);
+    }
+
+    atualizar();
+}
+
+function detectarFrequencia(buffer, sampleRate) {
+
+    let melhorOffset = -1;
+    let melhorCorrelacao = 0;
+
+    const tamanho = buffer.length;
+
+    for (let offset = 8; offset < 1000; offset++) {
+
+        let correlacao = 0;
+
+        for (let i = 0; i < tamanho - offset; i++) {
+            correlacao += Math.abs(buffer[i] - buffer[i + offset]);
+        }
+
+        correlacao = 1 - correlacao / (tamanho - offset);
+
+        if (correlacao > melhorCorrelacao) {
+            melhorCorrelacao = correlacao;
+            melhorOffset = offset;
+        }
+    }
+
+    if (melhorCorrelacao > 0.90) {
+        return sampleRate / melhorOffset;
+    }
+
+    return -1;
+}
+
+function frequenciaParaNota(freq) {
+
+    const notas = [
+        "C",
+        "C#",
+        "D",
+        "D#",
+        "E",
+        "F",
+        "F#",
+        "G",
+        "G#",
+        "A",
+        "A#",
+        "B"
+    ];
+
+    const numero = Math.round(12 * Math.log2(freq / 440) + 69);
+
+    const nome = notas[numero % 12];
+
+    const oitava = Math.floor(numero / 12) - 1;
+
+    return {
+        nome,
+        oitava
+    };
+}
+
+iniciarDetector();

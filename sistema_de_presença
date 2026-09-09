@@ -1,0 +1,213 @@
+import tkinter as tk
+from tkinter import messagebox
+import sqlite3
+import qrcode
+import cv2
+from pyzbar.pyzbar import decode
+from datetime import datetime
+import json
+import os
+
+# =========================
+# CONFIGURAÇÃO INICIAL
+# =========================
+
+PASTA_QR = "qrcodes"
+os.makedirs(PASTA_QR, exist_ok=True)
+
+# =========================
+# BANCO DE DADOS
+# =========================
+
+conn = sqlite3.connect("presenca.db")
+cursor = conn.cursor()
+
+# Tabela alunos
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS alunos(
+    ra TEXT PRIMARY KEY,
+    nome TEXT NOT NULL,
+    idade INTEGER NOT NULL
+)
+""")
+
+# Tabela presença
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS presenca(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    ra TEXT,
+    nome TEXT,
+    idade INTEGER,
+    data TEXT,
+    UNIQUE(ra, data)
+)
+""")
+
+conn.commit()
+
+# =========================
+# CADASTRAR ALUNO + GERAR QR
+# =========================
+
+
+def cadastrar():
+
+    nome = entrada_nome.get().strip()
+    ra = entrada_ra.get().strip()
+
+    # Validação
+    try:
+        idade = int(entrada_idade.get())
+    except:
+        messagebox.showerror("Erro", "Idade deve ser número")
+        return
+
+    if not nome or not ra:
+        messagebox.showerror("Erro", "Preencha todos os campos")
+        return
+
+    try:
+        # Salva no banco
+        cursor.execute(
+            "INSERT OR REPLACE INTO alunos (ra, nome, idade) VALUES (?, ?, ?)",
+            (ra, nome, idade)
+        )
+        conn.commit()
+
+        # Dados do QR
+        dados = {
+            "ra": ra,
+            "nome": nome,
+            "idade": idade
+        }
+
+        texto_qr = json.dumps(dados)
+
+        # Gera QR
+        caminho = os.path.join(PASTA_QR, f"qr_{ra}.png")
+        img = qrcode.make(texto_qr)
+        img.save(caminho)
+
+        messagebox.showinfo("Sucesso", f"QR gerado em:\n{caminho}")
+
+        print(f"[OK] QR gerado: {caminho}")
+
+    except Exception as e:
+        print("Erro:", e)
+        messagebox.showerror("Erro", str(e))
+
+
+# =========================
+# LEITOR DE QR
+# =========================
+
+def ler_qr():
+
+    cap = cv2.VideoCapture(0)
+
+    if not cap.isOpened():
+        messagebox.showerror("Erro", "Não foi possível acessar a câmera")
+        return
+
+    while True:
+        ret, frame = cap.read()
+
+        if not ret:
+            break
+
+        for codigo in decode(frame):
+
+            try:
+                dados = json.loads(codigo.data.decode('utf-8'))
+
+                ra = dados["ra"]
+                nome = dados["nome"]
+                idade = dados["idade"]
+
+                agora = datetime.now()
+                data_formatada = agora.strftime("%d/%m/%Y")
+                hora = agora.strftime("%H:%M:%S")
+
+                data_completa = f"{data_formatada} {hora}"
+
+                # Evitar duplicidade no mesmo dia
+                cursor.execute("""
+                SELECT * FROM presenca
+                WHERE ra=? AND data LIKE ?
+                """, (ra, f"{data_formatada}%"))
+
+                if cursor.fetchone():
+                    messagebox.showwarning(
+                        "Aviso", f"{nome} já registrado hoje!")
+                else:
+                    cursor.execute("""
+                    INSERT INTO presenca (ra, nome, idade, data)
+                    VALUES (?, ?, ?, ?)
+                    """, (ra, nome, idade, data_completa))
+
+                    conn.commit()
+
+                    messagebox.showinfo("Presença", f"{nome} registrado!")
+
+                cap.release()
+                cv2.destroyAllWindows()
+                return
+
+            except Exception as e:
+                messagebox.showerror("Erro", "QR inválido")
+
+        cv2.imshow("Leitor de QR - Pressione ESC para sair", frame)
+
+        if cv2.waitKey(1) == 27:
+            break
+
+    cap.release()
+    cv2.destroyAllWindows()
+
+
+# =========================
+# MOSTRAR PRESENÇAS
+# =========================
+
+def mostrar():
+
+    cursor.execute(
+        "SELECT ra, nome, idade, data FROM presenca ORDER BY data DESC")
+    dados = cursor.fetchall()
+
+    texto.delete("1.0", tk.END)
+
+    for linha in dados:
+        texto.insert(
+            tk.END, f"RA: {linha[0]} | {linha[1]} | {linha[2]} anos | {linha[3]}\n")
+
+
+# =========================
+# INTERFACE
+# =========================
+
+janela = tk.Tk()
+janela.title("Sistema de Presença Profissional")
+janela.geometry("400x500")
+
+tk.Label(janela, text="Nome").pack()
+entrada_nome = tk.Entry(janela)
+entrada_nome.pack()
+
+tk.Label(janela, text="Idade").pack()
+entrada_idade = tk.Entry(janela)
+entrada_idade.pack()
+
+tk.Label(janela, text="RA").pack()
+entrada_ra = tk.Entry(janela)
+entrada_ra.pack()
+
+tk.Button(janela, text="Cadastrar + Gerar QR", command=cadastrar).pack(pady=10)
+tk.Button(janela, text="Ler QR e Registrar Presença",
+          command=ler_qr).pack(pady=10)
+tk.Button(janela, text="Mostrar Presenças", command=mostrar).pack(pady=10)
+
+texto = tk.Text(janela, height=15, width=45)
+texto.pack()
+
+janela.mainloop()

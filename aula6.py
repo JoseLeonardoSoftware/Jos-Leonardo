@@ -1,6 +1,24 @@
-from math import sqrt
-co = float(input('Digite quande mede o cateto oposto:'))
-ca = float(input('Digite quanto mede o cateto adjacente:'))
-h = sqrt((co ** 2) + (ca ** 2))
-print(
-    f'Se o CO for {co} e o CA for {ca} a hipotenusa desse triangulo retangulo mede {h:.2f}')
+import keyboard
+import pygame
+
+# inicia sistema de áudio
+pygame.mixer.init()
+
+# carrega o som
+som = pygame.mixer.Sound("som.wav")
+
+print("Programa iniciado...")
+print("Cada tecla fará um som!")
+
+# função chamada ao apertar tecla
+
+
+def tocar_som(event):
+    som.play()
+
+
+# escuta todas as teclas
+keyboard.on_press(tocar_som)
+
+# mantém programa rodando
+keyboard.wait()

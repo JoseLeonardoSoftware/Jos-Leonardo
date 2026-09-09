@@ -7,7 +7,7 @@ a4 = input('Digite o nome do Quarto aluno:')
 
 al = [a1, a2, a3, a4]
 shuffle(al)
-#
+# Organiza um embaixo do outro e coloca a ordem numérica
 print('Ordem de apresentaçao dos alunos:')
 for leo, nome in enumerate(al, start=1):
     print(f'{leo}. {nome}')

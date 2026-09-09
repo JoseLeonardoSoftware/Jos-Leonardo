@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora Salário/Hora</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+            padding: 40px;
+            max-width: 500px;
+            width: 100%;
+            animation: slideUp 0.6s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        .header h1 {
+            color: #2c3e50;
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            color: #7f8c8d;
+            font-size: 16px;
+        }
+
+        .input-group {
+            margin-bottom: 24px;
+        }
+
+        .input-group label {
+            display: block;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 16px 20px 16px 60px;
+            border: 2px solid #e1e8ed;
+            border-radius: 16px;
+            font-size: 18px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .currency-symbol {
+            position: absolute;
+            left: 20px;
+            color: #7f8c8d;
+            font-weight: 600;
+            font-size: 18px;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .days-symbol {
+            position: absolute;
+            right: 20px;
+            color: #7f8c8d;
+            font-weight: 600;
+            font-size: 16px;
+            pointer-events: none;
+        }
+
+        .calculate-btn {
+            width: 100%;
+            padding: 18px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 16px;
+            font-size: 18px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 24px 0;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .calculate-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 40px rgba(102, 126, 234, 0.4);
+        }
+
+        .calculate-btn:active {
+            transform: translateY(-1px);
+        }
+
+        .result {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 20px;
+            padding: 32px;
+            text-align: center;
+            margin-top: 24px;
+            border: 3px solid transparent;
+            transition: all 0.3s ease;
+            display: none;
+        }
+
+        .result.show {
+            border-color: #27ae60;
+            display: block;
+            animation: bounce 0.6s ease-out;
+        }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-10px); }
+            60% { transform: translateY(-5px); }
+        }
+
+        .result-value {
+            font-size: 48px;
+            font-weight: 800;
+            color: #27ae60;
+            margin-bottom: 12px;
+        }
+
+        .result-label {
+            font-size: 18px;
+            color: #2c3e50;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .result-details {
+            font-size: 14px;
+            color: #7f8c8d;
+            line-height: 1.6;
+        }
+
+        .summary {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-top: 20px;
+        }
+
+        .summary-item {
+            background: white;
+            padding: 16px;
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        }
+
+        .summary-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: #2c3e50;
+        }
+
+        .summary-label {
+            font-size: 12px;
+            color: #7f8c8d;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .info {
+            text-align: center;
+            margin-top: 24px;
+            padding: 20px;
+            background: rgba(255,255,255,0.5);
+            border-radius: 16px;
+            font-size: 14px;
+            color: #5a6c7d;
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 24px;
+                margin: 10px;
+            }
+            
+            .result-value {
+                font-size: 36px;
+            }
+            
+            .summary {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>💰 Salário/Hora</h1>
+            <p>Calcule quanto você ganha por hora trabalhada</p>
+        </div>
+
+        <div class="input-group">
+            <label for="salario">💵 Salário Mensal</label>
+            <div class="input-wrapper">
+                <span class="currency-symbol">R$</span>
+                <input type="text" id="salario" placeholder="3.000,00" maxlength="15">
+            </div>
+        </div>
+
+        <div class="input-group">
+            <label for="diasSemana">📅 Dias por semana</label>
+            <div class="input-wrapper">
+                <input type="number" id="diasSemana" placeholder="5" min="1" max="7" value="5">
+                <span class="days-symbol">dias</span>
+            </div>
+        </div>
+
+        <div class="input-group">
+            <label for="horasDia">⏰ Horas por dia</label>
+            <div class="input-wrapper">
+                <input type="number" id="horasDia" placeholder="8" min="1" max="24" step="0.5" value="8">
+                <span class="days-symbol">h</span>
+            </div>
+        </div>
+
+        <button class="calculate-btn" onclick="calcularSalarioHora()">
+            🔢 Calcular Agora
+        </button>
+
+        <div class="result" id="resultado">
+            <div class="result-value" id="valorHora">0,00</div>
+            <div class="result-label">por hora trabalhada</div>
+            <div class="summary" id="resumo">
+                <!-- Preenchido pelo JavaScript -->
+            </div>
+        </div>
+
+        <div class="info">
+            📊 Cálculo baseado em 4,33 semanas por mês (padrão CLT Brasil)
+        </div>
+    </div>
+
+    <script>
+        function limparMascara(valor) {
+            return parseFloat(valor.replace(/[^\d,]/g, '').replace(',', '.')) || 0;
+        }
+
+        function formatarMoeda(valor) {
+            return new Intl.NumberFormat('pt-BR', {
+                style: 'currency',
+                currency: 'BRL'
+            }).format(valor);
+        }
+
+        function calcularSalarioHora() {
+            // Obter valores limpos
+            const salarioTexto = document.getElementById('salario').value;
+            const salario = limparMascara(salarioTexto);
+            const diasSemana = parseFloat(document.getElementById('diasSemana').value) || 5;
+            const horasDia = parseFloat(document.getElementById('horasDia').value) || 8;
+
+            // Validação
+            if (salario <= 0) {
+                alert('❌ Digite um salário válido!');
+                document.getElementById('salario').focus();
+                return;
+            }
+
+            if (diasSemana < 1 || diasSemana > 7 || horasDia < 1 || horasDia > 24) {
+                alert('❌ Verifique os dias da semana (1-7) e horas por dia (1-24)!');
+                return;
+            }
+
+            // Cálculos precisos
+            const semanasPorMes = 4.333; // 52/12
+            const diasPorMes = diasSemana * semanasPorMes;
+            const horasPorMes = diasPorMes * horasDia;
+            const salarioPorHora = salario / horasPorMes;
+
+            // Exibir resultado
+            document.getElementById('valorHora').textContent = formatarMoeda(salarioPorHora);
+            document.getElementById('resultado').classList.add('show');
+
+            // Resumo detalhado
+            const resumo = document.getElementById('resumo');
+            resumo.innerHTML = `
+                <div class="summary-item">
+                    <div class="summary-value">${diasPorMes.toFixed(0)} dias</div>
+                    <div class="summary-label">Dias/mês</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-value">${horasPorMes.toFixed(0)} h</div>
+                    <div class="summary-label">Horas/mês</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-value">${formatarMoeda(salarioPorHora * 44)}</div>
+                    <div class="summary-label">Jornada 44h</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-value">${formatarMoeda(salario)}</div>
+                    <div class="summary-label">Mensal</div>
+                </div>
+            `;
+
+            // Scroll suave para resultado
+            document.getElementById('resultado').scrollIntoView({ 
+                behavior: 'smooth', 
+                block: 'center' 
+            });
+        }
+
+        // Máscara inteligente para salário
+        document.getElementById('salario').addEventListener('input', function(e) {
+            let valor = e.target.value.replace(/\D/g, '');
+            valor = valor.replace(/(\d{1,3})(?=(\d{3})+(?:\.\d|\b))/g, '$1.');
+            if (valor.length > 0) {
+                valor = valor.replace(/\./g, ',');
+            }
+            e.target.value = 'R$ ' + valor;
+        });
+
+        // Foco automático e Enter para calcular
+        document.getElementById('salario').focus();
+        document.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                calcularSalarioHora();
+            }
+        });
+
+        // Valores padrão
+        document.getElementById('diasSemana').value = 5;
+        document.getElementById('horasDia').value = 8;
+    </script>
+</body>
+</html>
